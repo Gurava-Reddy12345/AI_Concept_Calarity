@@ -1,0 +1,341 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.5">
+  <title>ConceptClarity · scientific Q&A</title>
+  <!-- modern font stack: Inter + fallback -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:opsz,wght@14..32,400;14..32,500;14..32,600;14..32,700&display=swap" rel="stylesheet">
+  <!-- external stylesheet (separate file) -->
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <div class="clarity-container">
+
+    <!-- CARD: intelligent two-column layout with perfect vertical rhythm -->
+    <div class="clarity-card">
+
+      <!-- LEFT PANEL — deep, calm gradient, high information contrast -->
+      <div class="hero-panel history-panel">
+
+  <div class="brand">
+    <span class="brand-icon">🔬</span>
+    <h1>ConceptClarity</h1>
+  </div>
+
+  <p class="history-title">Search History</p>
+
+  <ul class="history-list">
+  {% if history %}
+    {% for group, items in history.items() %}
+      {% if items %}
+        <li class="history-group">{{ group }}</li>
+
+        {% for item in items %}
+          <li class="history-item" data-id="{{ item.id }}">
+            <span class="history-term clickable"
+                  onclick="runHistory('{{ item.term }}')">
+              {{ item.term }}
+            </span>
+
+            <div class="menu-wrapper">
+              <button class="menu-btn">⋯</button>
+
+              <div class="menu-dropdown">
+                <button onclick="renameItem('{{ item.id }}')">✏️ Rename</button>
+                <button class="danger"
+                        onclick="deleteItem('{{ item.id }}')">🗑 Delete</button>
+              </div>
+            </div>
+          </li>
+        {% endfor %}
+      {% endif %}
+    {% endfor %}
+  {% else %}
+    <li class="history-empty">No searches yet</li>
+  {% endif %}
+</ul>
+
+
+
+  <div class="history-footer">
+    Clear • Explain • Learn
+  </div>
+</div>
+
+
+      <!-- RIGHT INTERACTION PANEL -->
+<div class="interaction-panel">
+
+  <form method="POST" class="qa-form">
+
+    <div class="form-header">
+      <label for="questionInput" class="field-label">Your question</label>
+      <span class="label-hint">e.g. how does photosynthesis work?</span>
+    </div>
+
+   <div class="cta-block">
+
+ <div class="input-wrapper">
+  <input
+    type="text"
+    id="questionInput"
+    name="term"
+    class="question-input"
+    placeholder="Example: How does photosynthesis work?"
+    required
+  >
+
+  <!-- MIC BUTTON -->
+  <button type="button" class="mic-btn" id="micButton" aria-label="Voice input">
+
+    <!-- Mic icon -->
+    <svg class="mic-icon" viewBox="0 0 24 24">
+      <path d="M12 14a3 3 0 0 0 3-3V5a3 3 0 0 0-6 0v6a3 3 0 0 0 3 3zm5-3a5 5 0 0 1-10 0H5a7 7 0 0 0 14 0h-2zM11 18h2v3h-2z"/>
+    </svg>
+
+    <!-- Waveform icon -->
+    <svg class="wave-icon" viewBox="0 0 24 24">
+      <rect x="4"  y="8" width="3" height="8" rx="1"/>
+      <rect x="10" y="5" width="3" height="14" rx="1"/>
+      <rect x="16" y="8" width="3" height="8" rx="1"/>
+    </svg>
+
+  </button>
+</div>
+
+
+  <button type="submit" class="action-btn">
+    <span>Explain</span>
+    <span class="btn-arrow">→</span>
+  </button>
+
+</div>
+
+
+  </form>
+
+  <!-- FEEDBACK -->
+  <div class="feedback-area" aria-atomic="true">
+
+
+    {% if error_message %}
+    <div class="message-box error-msg" role="alert">
+      🚫 <span class="msg-text">{{ error_message }}</span>
+    </div>
+    {% endif %}
+
+    {% if success_message %}
+    <div class="message-box success-msg" role="status">
+       <span class="msg-text">{{ success_message }}</span>
+    </div>
+    {% endif %}
+
+  </div>
+
+  <!-- SUGGESTIONS -->
+  <div class="suggestion-section">
+    <span class="suggestion-label">⬤ quick picks</span>
+    <ul class="chip-list">
+      <li class="chip">DNA</li>
+      <li class="chip">Black Hole</li>
+      <li class="chip">Mitosis</li>
+      <li class="chip">Gravity</li>
+      <li class="chip">Photosynthesis</li>
+    </ul>
+  </div>
+
+  <div class="panel-footnote">
+    ⚡ instant · plain language · peer-inspired
+  </div>
+
+</div>
+
+    </div> <!-- end clarity-card -->
+  </div> <!-- end clarity-container -->
+
+  <!-- 
+    optional: tiny inline script to demonstrate chip interaction (non‑intrusive).
+    purely UX polish – chips fill input, follow professional patterns.
+  -->
+  <script>
+    (function() {
+      "use strict";
+      // enhances usability: chip click populates input, like real 10/10 product
+      const inputField = document.getElementById('questionInput');
+      const chips = document.querySelectorAll('.chip');
+      if (inputField && chips.length) {
+        chips.forEach(chip => {
+          chip.addEventListener('click', function(e) {
+            inputField.value = this.textContent.trim();
+            inputField.focus();
+            // subtle animation (optional, class toggled)
+            this.classList.add('chip-active');
+            setTimeout(() => this.classList.remove('chip-active'), 180);
+          });
+        });
+      }
+    })();
+  </script>
+  <script>
+(function () {
+  // Get elements
+  const micButton = document.getElementById("micButton");
+  const inputField = document.getElementById("questionInput");
+
+  // Browser speech recognition support
+  const SpeechRecognition =
+    window.SpeechRecognition || window.webkitSpeechRecognition;
+
+  // If not supported, hide mic
+  if (!SpeechRecognition) {
+    micButton.style.display = "none";
+    console.warn("Speech Recognition not supported");
+    return;
+  }
+
+  const recognition = new SpeechRecognition();
+  recognition.lang = "en-US";
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  // Start recording
+  micButton.addEventListener("click", () => {
+    recognition.start();
+    micButton.classList.add("recording");
+  });
+
+  // When speech is converted to text
+  recognition.onresult = (event) => {
+    const spokenText = event.results[0][0].transcript;
+    inputField.value = spokenText;
+  };
+
+  // When recording ends
+  recognition.onend = () => {
+    micButton.classList.remove("recording");
+    inputField.focus();
+  };
+
+  // Handle errors
+  recognition.onerror = () => {
+    micButton.classList.remove("recording");
+  };
+})();
+</script>
+<script>
+/* ---------- MENU TOGGLE ---------- */
+document.addEventListener("click", () => {
+  document.querySelectorAll(".menu-dropdown").forEach(m => m.style.display = "none");
+});
+
+document.querySelectorAll(".menu-btn").forEach(btn => {
+  btn.addEventListener("click", e => {
+    e.stopPropagation();
+    const menu = btn.nextElementSibling;
+    document.querySelectorAll(".menu-dropdown").forEach(m => m.style.display = "none");
+    menu.style.display = "block";
+  });
+});
+
+/* ---------- DELETE (NO PAGE RELOAD) ---------- */
+function deleteItem(id) {
+  fetch(`/delete/${id}`, { method: "DELETE" })
+    .then(() => {
+      const li = document.querySelector(`li[data-id='${id}']`);
+      if (li) li.remove();
+    });
+}
+
+/* ---------- RENAME (INLINE LIKE CHATGPT) ---------- */
+function renameItem(id) {
+  const li = document.querySelector(`li[data-id='${id}']`);
+  const span = li.querySelector(".history-term");
+
+  const input = document.createElement("input");
+  input.value = span.textContent;
+  input.className = "rename-input";
+
+  span.replaceWith(input);
+  input.focus();
+  input.select();
+
+  // Close menu immediately
+  li.querySelector(".menu-dropdown").style.display = "none";
+
+  input.addEventListener("keydown", e => {
+    if (e.key === "Enter") saveRename(id, input, li);
+    if (e.key === "Escape") cancelRename(span, input);
+  });
+
+  input.addEventListener("blur", () => saveRename(id, input, li));
+}
+
+function saveRename(id, input, li) {
+  const newName = input.value.trim();
+  if (!newName) return;
+
+  fetch(`/rename/${id}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/x-www-form-urlencoded" },
+    body: `new_name=${encodeURIComponent(newName)}`
+  }).then(() => {
+    const span = document.createElement("span");
+    span.className = "history-term";
+    span.textContent = newName;
+    input.replaceWith(span);
+  });
+}
+
+function cancelRename(span, input) {
+  input.replaceWith(span);
+}
+</script>
+<script>
+function runHistory(term) {
+  const input = document.getElementById("questionInput");
+  input.value = term;
+  input.focus();
+
+  // submit form automatically
+  input.closest("form").submit();
+}
+</script>
+<script>
+let historyIndex = -1;
+
+document.addEventListener("keydown", (e) => {
+  const input = document.getElementById("questionInput");
+  if (document.activeElement !== input) return;
+
+  const items = [...document.querySelectorAll(".history-term")];
+  if (!items.length) return;
+
+  if (e.key === "ArrowDown") {
+    e.preventDefault();
+    historyIndex = Math.min(historyIndex + 1, items.length - 1);
+    highlight(items);
+  }
+
+  if (e.key === "ArrowUp") {
+    e.preventDefault();
+    historyIndex = Math.max(historyIndex - 1, 0);
+    highlight(items);
+  }
+
+  if (e.key === "Enter" && historyIndex >= 0) {
+    e.preventDefault();
+    items[historyIndex].click();
+  }
+});
+
+function highlight(items) {
+  items.forEach(i => i.classList.remove("active-history"));
+  items[historyIndex].classList.add("active-history");
+}
+</script>
+
+</body>
+</html>
